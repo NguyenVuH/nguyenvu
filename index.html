@@ -1,10 +1,167 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>My Github Website</title>
     <meta charset="UTF-8">
+    <title>Web Công Cụ (Tools)</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 0;
+            padding: 0;
+            background: #f0f0f0;
+        }
+        header {
+            background: #222;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .container {
+            width: 95%;
+            max-width: 1000px;
+            margin: auto;
+            margin-top: 20px;
+        }
+        .tool {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 8px #0002;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        input, select, textarea, button {
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 15px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
-    <h1>Xin chào! Đây là web GitHub Pages của tôi.</h1>
+
+<header>
+    <h1>Web Công Cụ - Tools</h1>
+</header>
+
+<div class="container">
+
+    <!-- Calculator -->
+    <div class="tool">
+        <h2>🔢 Máy Tính</h2>
+        <input type="text" id="calc" placeholder="Nhập phép tính, vd: 10+5*2">
+        <button onclick="tinh()">Tính</button>
+        <p>Kết quả: <span id="calc_kq"></span></p>
+    </div>
+
+    <!-- Unit Converter -->
+    <div class="tool">
+        <h2>📏 Chuyển Đổi Đơn Vị</h2>
+        <input type="number" id="value" placeholder="Nhập số…">
+        <select id="convertType">
+            <option value="mk">Mét → Kilômét</option>
+            <option value="km">Kilômét → Mét</option>
+            <option value="cf">°C → °F</option>
+            <option value="fc">°F → °C</option>
+        </select>
+        <button onclick="convert()">Chuyển đổi</button>
+        <p>Kết quả: <span id="convert_kq"></span></p>
+    </div>
+
+    <!-- Character Counter -->
+    <div class="tool">
+        <h2>✍️ Đếm Ký Tự</h2>
+        <textarea id="textCount" rows="4" placeholder="Nhập đoạn văn…"></textarea>
+        <p>Ký tự: <span id="count_kitu">0</span></p>
+        <p>Từ: <span id="count_tu">0</span></p>
+    </div>
+
+    <!-- Notes -->
+    <div class="tool">
+        <h2>📝 Ghi Chú (Tự lưu)</h2>
+        <textarea id="notes" rows="5" placeholder="Nhập ghi chú…"></textarea>
+        <button onclick="saveNote()">Lưu</button>
+        <p><i>Ghi chú được lưu vào bộ nhớ trình duyệt.</i></p>
+    </div>
+
+    <!-- Password Generator -->
+    <div class="tool">
+        <h2>🔐 Tạo Mật Khẩu Ngẫu Nhiên</h2>
+        <button onclick="genPass()">Tạo mật khẩu</button>
+        <p>Mật khẩu: <span id="pass"></span></p>
+    </div>
+
+    <!-- Clock -->
+    <div class="tool">
+        <h2>⏰ Đồng Hồ Thời Gian Thực</h2>
+        <h3 id="clock"></h3>
+    </div>
+
+</div>
+
+<script>
+    // Calculator
+    function tinh() {
+        try {
+            const kq = eval(document.getElementById("calc").value);
+            document.getElementById("calc_kq").innerText = kq;
+        } catch {
+            document.getElementById("calc_kq").innerText = "Lỗi!";
+        }
+    }
+
+    // Unit converter
+    function convert() {
+        let v = parseFloat(document.getElementById("value").value);
+        let type = document.getElementById("convertType").value;
+        let kq = 0;
+
+        if (type === "mk") kq = v / 1000;
+        if (type === "km") kq = v * 1000;
+        if (type === "cf") kq = v * 1.8 + 32;
+        if (type === "fc") kq = (v - 32) / 1.8;
+
+        document.getElementById("convert_kq").innerText = kq;
+    }
+
+    // Character counter
+    document.getElementById("textCount").addEventListener("input", () => {
+        let text = document.getElementById("textCount").value;
+        document.getElementById("count_kitu").innerText = text.length;
+        document.getElementById("count_tu").innerText = text.trim().split(/\s+/).filter(x => x).length;
+    });
+
+    // Notes
+    function saveNote() {
+        localStorage.setItem("notes_save", document.getElementById("notes").value);
+        alert("Đã lưu ghi chú!");
+    }
+    document.getElementById("notes").value = localStorage.getItem("notes_save") || "";
+
+    // Password generator
+    function genPass() {
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+        let pw = "";
+        for (let i = 0; i < 12; i++) pw += chars[Math.floor(Math.random() * chars.length)];
+        document.getElementById("pass").innerText = pw;
+    }
+
+    // Clock
+    setInterval(() => {
+        document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+    }, 1000);
+</script>
+
 </body>
 </html>
