@@ -1,261 +1,131 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trang Công Cụ - Template</title>
-
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        background: #f8f8f8;
-    }
-
-    /* HEADER */
-    header {
-        background: #1f1f1f;
-        padding: 12px 20px;
-        color: white;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    header h1 {
-        margin: 0;
-        font-size: 20px;
-        font-weight: 600;
-    }
-    nav a {
-        color: white;
-        text-decoration: none;
-        margin-left: 20px;
-        font-size: 15px;
-    }
-    nav a:hover {
-        opacity: 0.7;
-    }
-
-    /* PAGE WRAPPER */
-    .container {
-        width: 95%;
-        max-width: 1100px;
-        margin: auto;
-        margin-top: 20px;
-    }
-
-    /* MAIN TITLE */
-    .title {
-        font-size: 22px;
-        font-weight: bold;
-        margin-bottom: 10px;
-        color: #333;
-    }
-
-    .desc {
-        color: #555;
-        margin-bottom: 20px;
-    }
-
-    /* TOOL TABLE */
-    .tool-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 0 10px #0001;
-    }
-    .tool-table th, .tool-table td {
-        padding: 15px;
-        border-bottom: 1px solid #eee;
-        font-size: 15px;
-    }
-    th {
-        background: #fafafa;
-        text-align: left;
-        font-weight: 600;
-    }
-    tr:hover {
-        background: #f5f5f5;
-    }
-
-    .btn {
-        padding: 8px 12px;
-        background: #007bff;
-        color: white;
-        border-radius: 5px;
-        text-decoration: none;
-    }
-    .btn:hover {
-        opacity: 0.8;
-    }
-
-    /* FOOTER */
-    footer {
-        text-align: center;
-        padding: 20px;
-        color: #666;
-        margin-top: 30px;
-    }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TechShop - Cửa hàng công nghệ hiện đại</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-
 <body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="nav-left">
+        <h1 class="logo">🛍️ TechShop</h1>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Tìm kiếm sản phẩm...">
+          <button onclick="searchProducts()">🔍</button>
+        </div>
+      </div>
+      <div class="nav-right">
+        <a href="profile.html" style="text-decoration: none; color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: var(--radius); transition: var(--transition); display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='var(--bg-hover)'; this.style.color='var(--primary-light)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)';">
+          👤 Tài khoản
+        </a>
+        <span id="userInfo" class="user-info">Đang tải...</span>
+        <button class="cart-btn" onclick="toggleCart()">
+          🛒 <span id="cartCount" class="cart-count">0</span>
+        </button>
+        <button class="logout-btn" onclick="handleLogout()">Đăng xuất</button>
+      </div>
+    </div>
+  </nav>
 
-<header>
-    <h1>MyTools</h1>
-    <nav>
-        <a href="#">Trang chủ</a>
-        <a href="#">Công cụ</a>
-        <a href="#">Liên hệ</a>
-    </nav>
-</header>
+  <!-- Main Content -->
+  <div class="main-container">
+    <!-- Sidebar Filters -->
+    <aside class="sidebar">
+      <h3>Danh mục</h3>
+      <div class="filter-group">
+        <button class="filter-btn active" onclick="filterByCategory('all')">Tất cả</button>
+        <button class="filter-btn" onclick="filterByCategory('laptop')">Laptop</button>
+        <button class="filter-btn" onclick="filterByCategory('phone')">Điện thoại</button>
+        <button class="filter-btn" onclick="filterByCategory('accessory')">Phụ kiện</button>
+        <button class="filter-btn" onclick="filterByCategory('audio')">Âm thanh</button>
+      </div>
 
-<div class="container">
+      <h3>Khoảng giá</h3>
+      <div class="filter-group">
+        <button class="filter-btn" onclick="filterByPrice(0, 5000000)">Dưới 5 triệu</button>
+        <button class="filter-btn" onclick="filterByPrice(5000000, 15000000)">5-15 triệu</button>
+        <button class="filter-btn" onclick="filterByPrice(15000000, 30000000)">15-30 triệu</button>
+        <button class="filter-btn" onclick="filterByPrice(30000000, Infinity)">Trên 30 triệu</button>
+      </div>
 
-    <div class="title">Danh sách công cụ</div>
-    <div class="desc">Tổng hợp các tiện ích bạn có thể sử dụng trực tuyến.</div>
+      <h3>Sắp xếp</h3>
+      <div class="filter-group">
+        <button class="filter-btn" onclick="sortProducts('name')">Theo tên</button>
+        <button class="filter-btn" onclick="sortProducts('price-asc')">Giá tăng dần</button>
+        <button class="filter-btn" onclick="sortProducts('price-desc')">Giá giảm dần</button>
+        <button class="filter-btn" onclick="sortProducts('popular')">Phổ biến</button>
+      </div>
 
-    <table class="tool-table">
-        <tr>
-            <th>Tên công cụ</th>
-            <th>Mô tả</th>
-            <th>Thao tác</th>
-        </tr>
+      <button class="reset-btn" onclick="resetFilters()">Đặt lại bộ lọc</button>
+    </aside>
 
-        <tr>
-            <td>Máy tính</td>
-            <td>Tính toán nhanh biểu thức.</td>
-            <td><a class="btn" href="#calc">Dùng ngay</a></td>
-        </tr>
+    <!-- Products Grid -->
+    <main class="content">
+      <div class="content-header">
+        <h2>Sản phẩm nổi bật</h2>
+        <div class="view-toggle">
+          <button onclick="setView('grid')" class="active">📊</button>
+          <button onclick="setView('list')">📋</button>
+        </div>
+      </div>
+      <div id="productGrid" class="product-grid"></div>
+      <div id="loadingSpinner" class="loading-spinner" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+    </main>
+  </div>
 
-        <tr>
-            <td>Chuyển đổi đơn vị</td>
-            <td>Mét ↔ Km, °C ↔ °F,...</td>
-            <td><a class="btn" href="#convert">Dùng ngay</a></td>
-        </tr>
+  <!-- Cart Sidebar -->
+  <div id="cartSidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h3>Giỏ hàng của bạn</h3>
+      <button onclick="toggleCart()" class="close-btn">✕</button>
+    </div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>Tạm tính:</span>
+          <span id="subtotal">0₫</span>
+        </div>
+        <div class="summary-row">
+          <span>Giảm giá:</span>
+          <span id="discount" class="discount">-0₫</span>
+        </div>
+        <div class="summary-row total">
+          <span>Tổng cộng:</span>
+          <span id="totalPrice">0₫</span>
+        </div>
+      </div>
+      <button class="checkout-btn" id="checkoutBtn">Thanh toán</button>
+      <button class="clear-cart-btn" onclick="clearCart()">Xóa giỏ hàng</button>
+    </div>
+  </div>
 
-        <tr>
-            <td>Đếm ký tự</td>
-            <td>Đếm từ, ký tự trong đoạn văn.</td>
-            <td><a class="btn" href="#counter">Dùng ngay</a></td>
-        </tr>
+  <!-- Product Detail Modal -->
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal()">✕</span>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
 
-        <tr>
-            <td>Tạo mật khẩu</td>
-            <td>Tạo mật khẩu mạnh ngẫu nhiên.</td>
-            <td><a class="btn" href="#password">Dùng ngay</a></td>
-        </tr>
+  <!-- Notification Toast -->
+  <div id="toast" class="toast"></div>
 
-        <tr>
-            <td>Ghi chú</td>
-            <td>Lưu ghi chú vào trình duyệt.</td>
-            <td><a class="btn" href="#notes">Dùng ngay</a></td>
-        </tr>
-
-        <tr>
-            <td>Đồng hồ</td>
-            <td>Hiển thị thời gian thực.</td>
-            <td><a class="btn" href="#clock">Dùng ngay</a></td>
-        </tr>
-    </table>
-
-    <!-- -------------------------------------------------------
-        TOOLS SECTION — giống bản mình gửi trước nhưng gọn hơn
-    -------------------------------------------------------- -->
-
-    <h2 id="calc">🔢 Máy Tính</h2>
-    <input id="calc_input" style="width:100%;padding:10px" placeholder="VD: 10+5*2">
-    <button class="btn" onclick="tinh()">Tính</button>
-    <p>Kết quả: <b id="calc_out"></b></p>
-    <hr>
-
-    <h2 id="convert">📏 Chuyển Đổi Đơn Vị</h2>
-    <input type="number" id="num">
-    <select id="type">
-        <option value="mk">Mét → Km</option>
-        <option value="km">Km → Mét</option>
-        <option value="cf">°C → °F</option>
-        <option value="fc">°F → °C</option>
-    </select>
-    <button class="btn" onclick="convert()">Chuyển</button>
-    <p>Kết quả: <b id="convert_out"></b></p>
-    <hr>
-
-    <h2 id="counter">✍️ Đếm Ký Tự</h2>
-    <textarea id="text" style="width:100%;height:120px"></textarea>
-    <p>Ký tự: <b id="c1">0</b> — Từ: <b id="c2">0</b></p>
-    <hr>
-
-    <h2 id="notes">📝 Ghi Chú</h2>
-    <textarea id="note" style="width:100%;height:120px"></textarea>
-    <button class="btn" onclick="save()">Lưu</button>
-    <p><i>Tự lưu vào trình duyệt</i></p>
-    <hr>
-
-    <h2 id="password">🔐 Mật khẩu ngẫu nhiên</h2>
-    <button class="btn" onclick="mkpw()">Tạo mật khẩu</button>
-    <p><b id="pw"></b></p>
-    <hr>
-
-    <h2 id="clock">⏰ Đồng Hồ</h2>
-    <h3 id="clock_out"></h3>
-
-</div>
-
-<footer>
-    © 2025 MyTools — Thiết kế dạng phamgiang.net (layout tự code)
-</footer>
-
-<script>
-function tinh() {
-    try {
-        document.getElementById("calc_out").innerText =
-            eval(document.getElementById("calc_input").value);
-    } catch {
-        document.getElementById("calc_out").innerText = "Lỗi!";
-    }
-}
-
-function convert() {
-    let v = parseFloat(document.getElementById("num").value);
-    let t = document.getElementById("type").value;
-    let k = 0;
-
-    if (t=="mk") k=v/1000;
-    if (t=="km") k=v*1000;
-    if (t=="cf") k=v*1.8+32;
-    if (t=="fc") k=(v-32)/1.8;
-
-    document.getElementById("convert_out").innerText = k;
-}
-
-document.getElementById("text").addEventListener("input", () => {
-    let t = document.getElementById("text").value;
-    document.getElementById("c1").innerText = t.length;
-    document.getElementById("c2").innerText =
-        t.trim().split(/\s+/).filter(x=>x).length;
-});
-
-function save() {
-    localStorage.setItem("note", document.getElementById("note").value);
-    alert("Đã lưu!");
-}
-document.getElementById("note").value = localStorage.getItem("note") || "";
-
-function mkpw() {
-    const c="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
-    let p="";
-    for(let i=0;i<12;i++) p+=c[Math.floor(Math.random()*c.length)];
-    document.getElementById("pw").innerText=p;
-}
-
-setInterval(()=>{
-    document.getElementById("clock_out").innerText =
-        new Date().toLocaleTimeString();
-},1000);
-</script>
-
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+  
+  <!-- App Scripts -->
+  <script src="auth.js"></script>
+  <script src="user-profile.js"></script>
+  <script src="order-history.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập - TechShop</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+  <div class="login-container">
+    <div class="login-left">
+      <div class="login-branding">
+        <h1>🛍️ TechShop</h1>
+        <p>Nền tảng mua sắm công nghệ hàng đầu Việt Nam</p>
+        <div class="features">
+          <div class="feature">
+            <span class="feature-icon">✨</span>
+            <div>
+              <h4>Sản phẩm chính hãng</h4>
+              <p>100% hàng chính hãng, bảo hành toàn quốc</p>
+            </div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">🚚</span>
+            <div>
+              <h4>Giao hàng nhanh chóng</h4>
+              <p>Miễn phí vận chuyển cho đơn từ 500.000₫</p>
+            </div>
+          </div>
+          <div class="feature">
+            <span class="feature-icon">💳</span>
+            <div>
+              <h4>Thanh toán linh hoạt</h4>
+              <p>Hỗ trợ nhiều hình thức thanh toán</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-right">
+      <div class="login-box">
+        <div class="login-header">
+          <h2 id="formTitle">Đăng nhập</h2>
+          <p id="formSubtitle">Chào mừng bạn quay trở lại!</p>
+        </div>
+
+        <div id="loginForm" class="auth-form">
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="loginEmail" placeholder="example@email.com" autocomplete="username">
+          </div>
+          <div class="input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+          </div>
+          <div class="form-options">
+            <label class="checkbox">
+              <input type="checkbox" id="rememberMe">
+              <span>Ghi nhớ đăng nhập</span>
+            </label>
+            <a href="#" class="forgot-link">Quên mật khẩu?</a>
+          </div>
+          <button class="auth-btn" onclick="handleLogin()">Đăng nhập</button>
+          <div class="divider">
+            <span>Hoặc tiếp tục với</span>
+          </div>
+          <button class="google-btn" onclick="handleGoogleLogin()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            Đăng nhập với Google
+          </button>
+          <p class="switch-form">
+            Chưa có tài khoản? <a href="#" onclick="toggleForm()">Đăng ký ngay</a>
+          </p>
+        </div>
+
+        <div id="registerForm" class="auth-form" style="display:none;">
+          <div class="input-group">
+            <label>Họ và tên</label>
+            <input type="text" id="registerName" placeholder="Nguyễn Văn A">
+          </div>
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="registerEmail" placeholder="example@email.com" autocomplete="username">
+          </div>
+          <div class="input-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="registerPassword" placeholder="Ít nhất 6 ký tự" autocomplete="new-password">
+          </div>
+          <div class="input-group">
+            <label>Xác nhận mật khẩu</label>
+            <input type="password" id="registerConfirmPassword" placeholder="Nhập lại mật khẩu">
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" id="agreeTerms">
+            <span>Tôi đồng ý với <a href="#">Điều khoản dịch vụ</a></span>
+          </label>
+          <button class="auth-btn" onclick="handleRegister()">Đăng ký</button>
+          <div class="divider">
+            <span>Hoặc tiếp tục với</span>
+          </div>
+          <button class="google-btn" onclick="handleGoogleLogin()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+            Đăng nhập với Google
+          </button>
+          <p class="switch-form">
+            Đã có tài khoản? <a href="#" onclick="toggleForm()">Đăng nhập</a>
+          </p>
+        </div>
+
+        <div id="authMessage" class="auth-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  
+  <script src="auth.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>
