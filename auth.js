@@ -19,6 +19,7 @@ const db = firebase.firestore ? firebase.firestore() : null;
 
 // ==================== AUTH STATE MANAGEMENT ====================
 let currentUser = null;
+let authStateInitialized = false;
 
 auth.onAuthStateChanged(user => {
   currentUser = user;
@@ -29,26 +30,29 @@ auth.onAuthStateChanged(user => {
   
   console.log("Auth state changed. User:", user ? user.email : "null", "Page:", page);
   
-  // Redirect logic
-  if (!user) {
-    // Nếu chưa đăng nhập và KHÔNG PHẢI trang login
-    if (page !== "login.html") {
-      console.log("Not logged in, redirecting to login");
-      window.location.href = "login.html";
-    }
-  } else {
-    // Nếu đã đăng nhập và đang ở trang login
-    if (page === "login.html") {
-      console.log("Already logged in, redirecting to index");
-      window.location.href = "index.html";
-    }
+  // Chỉ redirect một lần
+  if (!authStateInitialized) {
+    authStateInitialized = true;
     
-    // Cập nhật UI nếu đang ở các trang khác
-    if (page === "index.html" || page === "") {
-      updateUserInfo(user);
+    // Redirect logic
+    if (!user) {
+      // Nếu chưa đăng nhập và KHÔNG PHẢI trang login
+      if (page !== "login.html") {
+        console.log("Not logged in, redirecting to login");
+        window.location.href = "login.html";
+      }
+    } else {
+      // Nếu đã đăng nhập và đang ở trang login
+      if (page === "login.html") {
+        console.log("Already logged in, redirecting to index");
+        window.location.href = "index.html";
+      }
+      
+      // Cập nhật UI nếu đang ở các trang khác
+      if (page === "index.html" || page === "") {
+        updateUserInfo(user);
+      }
     }
-    
-    // Nếu đang ở trang profile, không làm gì (để profile.js xử lý)
   }
 });
 

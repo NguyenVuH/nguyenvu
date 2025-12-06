@@ -62,33 +62,49 @@ let cart = [];
 let filteredProducts = [...PRODUCTS];
 let currentCategory = "all";
 let currentView = "grid";
+let isInitialized = false;
 
 // ==================== INITIALIZATION ====================
 document.addEventListener("DOMContentLoaded", () => {
-  initializeApp();
+  // Đợi auth state sẵn sàng
+  auth.onAuthStateChanged(async (user) => {
+    if (!isInitialized) {
+      isInitialized = true;
+      await initializeApp(user);
+    }
+  });
 });
 
-async function initializeApp() {
-  const user = auth.currentUser;
-  if (user && typeof userProfile !== 'undefined') {
-    await userProfile.initUserProfile(user.uid);
-    await orderHistory.initOrderHistory(user.uid);
+async function initializeApp(user) {
+  console.log("Initializing app for user:", user?.email || "no user");
+  
+  if (user) {
+    // Khởi tạo profile và order history
+    if (typeof userProfile !== 'undefined') {
+      await userProfile.initUserProfile(user.uid);
+    }
+    if (typeof orderHistory !== 'undefined') {
+      await orderHistory.initOrderHistory(user.uid);
+    }
   }
   
-  loadCart();
+  // Load giỏ hàng
+  await loadCart();
+  
+  // Render giao diện
   renderProducts();
   updateCartUI();
   setupEventListeners();
+  
+  console.log("App initialized. Cart items:", cart.length);
 }
 
 function setupEventListeners() {
-  // Checkout button
   const checkoutBtn = document.getElementById("checkoutBtn");
   if (checkoutBtn) {
     checkoutBtn.onclick = handleCheckout;
   }
   
-  // Close modal on outside click
   const modal = document.getElementById("productModal");
   if (modal) {
     modal.onclick = (e) => {
@@ -300,13 +316,11 @@ function updateCartUI() {
   const discountEl = document.getElementById("discount");
   const totalEl = document.getElementById("totalPrice");
   
-  // Update count
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   if (cartCount) {
     cartCount.textContent = totalItems;
   }
   
-  // Update cart items
   if (cartItems) {
     if (cart.length === 0) {
       cartItems.innerHTML = `
@@ -335,7 +349,6 @@ function updateCartUI() {
     }
   }
   
-  // Calculate totals
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discount = subtotal >= 50000000 ? subtotal * 0.1 : 0;
   const total = subtotal - discount;
@@ -352,31 +365,89 @@ function toggleCart() {
   }
 }
 
-// ==================== CART PERSISTENCE ====================
-function saveCart() {
+// ==================== CART PERSISTENCE (Firestore + localStorage) ====================
+async function saveCart() {
   const userId = getCurrentUserId();
-  if (!userId) return;
+  if (!userId) {
+    console.log("No user ID, cannot save cart");
+    return;
+  }
   
   try {
+    // Lưu vào localStorage
     const cartData = JSON.stringify(cart);
     localStorage.setItem(`cart_${userId}`, cartData);
+    console.log("Cart saved to localStorage");
+    
+    // Sync lên Firestore
+    if (typeof db !== 'undefined' && db) {
+      await db.collection("carts").doc(userId).set({
+        cart: cart,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      console.log("Cart synced to Firestore");
+    }
   } catch (error) {
     console.error("Error saving cart:", error);
   }
 }
 
-function loadCart() {
+async function loadCart() {
   const userId = getCurrentUserId();
   if (!userId) {
+    console.log("No user ID, cart is empty");
     cart = [];
     return;
   }
   
+  console.log("Loading cart for user:", userId);
+  
   try {
+    // Thử load từ Firestore trước
+    if (typeof db !== 'undefined' && db) {
+      try {
+        const cartDoc = await db.collection("carts").doc(userId).get();
+        if (cartDoc.exists) {
+          cart = cartDoc.data().cart || [];
+          
+          // Sync về localStorage
+          localStorage.setItem(`cart_${userId}`, JSON.stringify(cart));
+          
+          console.log("Cart loaded from Firestore:", cart.length, "items");
+          updateCartUI(); // Cập nhật UI ngay sau khi load
+          return;
+        } else {
+          console.log("No cart found in Firestore");
+        }
+      } catch (firestoreError) {
+        console.log("Firestore not available, using localStorage:", firestoreError.message);
+      }
+    }
+    
+    // Load từ localStorage
     const cartData = localStorage.getItem(`cart_${userId}`);
     if (cartData) {
       cart = JSON.parse(cartData);
+      console.log("Cart loaded from localStorage:", cart.length, "items");
+      
+      // Sync lên Firestore nếu có dữ liệu
+      if (cart.length > 0 && typeof db !== 'undefined' && db) {
+        try {
+          await db.collection("carts").doc(userId).set({
+            cart: cart,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          console.log("Cart synced to Firestore from localStorage");
+        } catch (syncError) {
+          console.log("Failed to sync cart to Firestore:", syncError.message);
+        }
+      }
+    } else {
+      console.log("No cart found in localStorage");
+      cart = [];
     }
+    
+    updateCartUI(); // Cập nhật UI sau khi load
   } catch (error) {
     console.error("Error loading cart:", error);
     cart = [];
@@ -396,7 +467,6 @@ async function handleCheckout() {
     return;
   }
   
-  // Show payment options
   showPaymentModal();
 }
 
@@ -412,8 +482,6 @@ function showPaymentModal() {
   
   const userBalance = typeof userProfile !== 'undefined' ? userProfile.getBalance() : 0;
   const hasEnoughBalance = userBalance >= finalTotal;
-  
-  console.log("Payment Modal - Balance:", userBalance, "Total:", finalTotal, "Enough?", hasEnoughBalance);
   
   modalBody.innerHTML = `
     <div style="max-width: 500px; margin: 0 auto;">
@@ -461,16 +529,11 @@ function showPaymentModal() {
 }
 
 async function processPayment(method, totalAmount) {
-  console.log("Processing payment:", method, "Amount:", totalAmount);
-  
   const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const discount = total >= 50000000 ? total * 0.1 : 0;
   const finalTotal = total - discount;
   
-  // Check if userProfile and orderHistory are available
   if (typeof userProfile === 'undefined' || typeof orderHistory === 'undefined') {
-    console.log("Profile/Order system not available, using fallback");
-    // Fallback to simple checkout
     closeModal();
     showToast("Đang xử lý đơn hàng...", "success");
     
@@ -484,11 +547,9 @@ async function processPayment(method, totalAmount) {
     return;
   }
   
-  // Check balance if paying with balance
   const useBalance = method === 'balance';
   if (useBalance) {
     const currentBalance = userProfile.getBalance();
-    console.log("Current balance:", currentBalance, "Required:", finalTotal);
     
     if (currentBalance < finalTotal) {
       showToast("Số dư không đủ! Vui lòng nạp thêm tiền.", "error");
@@ -496,7 +557,6 @@ async function processPayment(method, totalAmount) {
     }
   }
   
-  // Create order with new system
   closeModal();
   showToast("Đang xử lý đơn hàng...", "success");
   
@@ -504,17 +564,14 @@ async function processPayment(method, totalAmount) {
     const order = await orderHistory.createOrder(cart, method, useBalance);
     
     if (order) {
-      console.log("Order created successfully:", order.id);
-      
       cart = [];
-      saveCart();
+      await saveCart(); // Sync cart rỗng lên Firestore
       updateCartUI();
       
       setTimeout(() => {
         toggleCart();
         showToast("✅ Đặt hàng thành công! Mã đơn: " + order.id, "success");
         
-        // Ask if user wants to view order history
         setTimeout(() => {
           if (confirm("Đặt hàng thành công! Bạn có muốn xem lịch sử đơn hàng?")) {
             window.location.href = "profile.html";
@@ -522,7 +579,6 @@ async function processPayment(method, totalAmount) {
         }, 1500);
       }, 500);
     } else {
-      console.error("Order creation failed");
       showToast("Đặt hàng thất bại! Vui lòng thử lại.", "error");
     }
   } catch (error) {
@@ -535,7 +591,6 @@ async function processPayment(method, totalAmount) {
 function filterByCategory(category) {
   currentCategory = category;
   
-  // Update active button
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
   });
@@ -591,7 +646,6 @@ function resetFilters() {
   currentCategory = "all";
   filteredProducts = [...PRODUCTS];
   
-  // Reset active buttons
   document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.classList.remove('active');
   });
@@ -624,7 +678,6 @@ function searchProducts() {
   showToast(`Tìm thấy ${filteredProducts.length} sản phẩm`, "success");
 }
 
-// Add search on enter key
 document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.getElementById("searchInput");
   if (searchInput) {
@@ -650,7 +703,6 @@ function setView(view) {
     }
   }
   
-  // Update active button
   buttons.forEach(btn => btn.classList.remove('active'));
   event.target.classList.add('active');
   

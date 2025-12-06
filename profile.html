@@ -375,6 +375,114 @@
       transform: scale(1.05);
     }
 
+    /* BỔ SUNG: CSS cho Modal và Chi tiết đơn hàng */
+    .modal {
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: none; /* Ban đầu ẩn */
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background-color: var(--bg-card);
+      padding: 2rem;
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-xl);
+      position: relative;
+      max-width: 90%;
+      transform: translateY(-50px);
+      transition: transform 0.3s ease;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-close {
+      color: var(--text-muted);
+      float: right;
+      font-size: 1.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      top: 15px;
+      right: 25px;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover,
+    .modal-close:focus {
+      color: var(--primary);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Style cho chi tiết sản phẩm trong modal */
+    .order-detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 0;
+      border-bottom: 1px dashed var(--border);
+    }
+
+    .order-detail-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 2;
+    }
+
+    .item-quantity {
+      color: var(--text-secondary);
+      flex: 1;
+      text-align: center;
+    }
+
+    .item-price {
+      font-weight: 600;
+      color: var(--primary);
+      flex: 1;
+      text-align: right;
+    }
+
+    .order-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
+      border-top: 1px solid var(--border);
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .order-summary-row span:first-child {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .order-summary-row span:last-child {
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    /* END BỔ SUNG */
+
     @media (max-width: 1024px) {
       .profile-container {
         grid-template-columns: 1fr;
@@ -406,7 +514,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-container">
       <div class="nav-left">
@@ -423,7 +530,6 @@
     </div>
   </nav>
 
-  <!-- Loading Spinner -->
   <div id="loadingScreen" style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
     <div style="text-align: center;">
       <div class="spinner" style="width: 50px; height: 50px; border: 5px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
@@ -431,9 +537,7 @@
     </div>
   </div>
 
-  <!-- Profile Container -->
   <div class="profile-container" id="profileContainer" style="display: none;">
-    <!-- Sidebar Menu -->
     <aside class="profile-sidebar">
       <div class="profile-avatar">
         <div class="avatar-circle" id="userAvatar">👤</div>
@@ -451,12 +555,13 @@
         <button class="profile-menu-item" onclick="showSection('balance')">
           💰 Số dư tài khoản
         </button>
+        <button class="profile-menu-item" onclick="showSection('orders')">
+          📜 Lịch sử mua hàng
+        </button>
       </nav>
     </aside>
 
-    <!-- Main Content -->
     <main class="profile-content">
-      <!-- Overview Section -->
       <section id="overview-section" class="profile-section active">
         <h2 class="section-title">Tổng quan tài khoản</h2>
         
@@ -496,7 +601,6 @@
         </div>
       </section>
 
-      <!-- Personal Info Section -->
       <section id="info-section" class="profile-section">
         <h2 class="section-title">Thông tin cá nhân</h2>
         
@@ -543,7 +647,6 @@
         </form>
       </section>
 
-      <!-- Balance Section -->
       <section id="balance-section" class="profile-section">
         <h2 class="section-title">Số dư tài khoản</h2>
         
@@ -558,10 +661,19 @@
           </div>
         </div>
       </section>
+
+      <section id="orders-section" class="profile-section">
+        <h2 class="section-title">Lịch sử mua hàng chi tiết</h2>
+
+        <div id="allOrdersList" class="order-list">
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <p>Đang tải lịch sử đơn hàng...</p>
+          </div>
+        </div>
+      </section>
     </main>
   </div>
 
-  <!-- Top Up Modal -->
   <div id="topUpModal" class="modal">
     <div class="modal-content" style="max-width: 500px;">
       <span class="modal-close" onclick="closeTopUpModal()">✕</span>
@@ -585,15 +697,22 @@
     </div>
   </div>
 
-  <!-- Toast Notification -->
+  <div id="orderDetailModal" class="modal">
+    <div class="modal-content" style="max-width: 700px;">
+      <span class="modal-close" onclick="closeOrderDetailModal()">✕</span>
+      <h2 style="margin-bottom: 1rem;">Chi tiết đơn hàng</h2>
+      <div id="orderDetailContent">
+        <p style="text-align: center;">Đang tải...</p>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
   
-  <!-- App Scripts -->
   <script src="auth.js"></script>
   <script src="user-profile.js"></script>
   <script src="order-history.js"></script>
@@ -602,6 +721,33 @@
     // Inline profile logic for simplicity
     let currentFilter = "all";
     let authInitialized = false;
+
+    // BỔ SUNG: Placeholder cho OrderHistory.getStatusText nếu nó chưa được định nghĩa trong order-history.js
+    if (typeof OrderHistory === 'undefined') {
+        window.OrderHistory = {
+            getStatusText: (status) => {
+                switch(status) {
+                    case 'completed': return { text: 'Hoàn thành', color: '#10b981' };
+                    case 'pending': return { text: 'Đang xử lý', color: '#f59e0b' };
+                    case 'shipping': return { text: 'Đang giao hàng', color: '#8b5cf6' };
+                    case 'cancelled': return { text: 'Đã hủy', color: '#ef4444' };
+                    default: return { text: 'Không rõ', color: '#6b7280' };
+                }
+            }
+        };
+    }
+    
+    // Placeholder cho các hàm từ bên ngoài (Nếu không có sẽ gây lỗi)
+    function showToast(message, type) { 
+        // Thay thế bằng logic hiển thị toast thực tế của bạn
+        console.log(`[Toast ${type}]: ${message}`); 
+    }
+    function handleLogout() {
+        // Thay thế bằng logic đăng xuất thực tế của bạn
+        console.log("Logging out...");
+        // auth.signOut().then(() => { window.location.href = "login.html"; }); 
+    }
+
 
     // Wait for auth state to be ready
     auth.onAuthStateChanged(async (user) => {
@@ -631,6 +777,7 @@
       renderOverview();
       renderPersonalInfo();
       renderBalance();
+      renderAllOrders(); // BỔ SUNG: Gọi hàm render tất cả đơn hàng
       loadCartCount();
       
       // Setup form handler
@@ -657,7 +804,12 @@
       });
 
       document.getElementById(`${sectionName}-section`).classList.add('active');
-      event.target.classList.add('active');
+      
+      // CẬP NHẬT: Dùng querySelector để tìm menu item tương ứng
+      const menuItem = document.querySelector(`.profile-menu-item[onclick="showSection('${sectionName}')"]`);
+      if (menuItem) {
+          menuItem.classList.add('active');
+      }
     }
 
     function renderUserInfo() {
@@ -698,10 +850,45 @@
 
       container.innerHTML = orders.map(order => {
         const statusInfo = OrderHistory.getStatusText(order.orderStatus);
+        // CẬP NHẬT: Thêm onclick để mở modal chi tiết
         return `
-          <div class="order-item-compact">
+          <div class="order-item-compact" onclick="showOrderDetail('${order.id}')" style="cursor: pointer;">
             <div class="order-compact-header">
               <span class="order-id">${order.id}</span>
+              <span class="order-status" style="background: ${statusInfo.color}20; color: ${statusInfo.color};">
+                ${statusInfo.text}
+              </span>
+            </div>
+            <div class="order-compact-info">
+              <span>${order.items.length} sản phẩm</span>
+              <span class="order-total">${formatPrice(order.total)}</span>
+            </div>
+            <small class="order-date">${formatDate(order.orderDate)}</small>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // BỔ SUNG: Hàm hiển thị tất cả đơn hàng
+    function renderAllOrders() {
+      const orders = orderHistory.getOrders();
+      const container = document.getElementById('allOrdersList');
+
+      if (orders.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <p>Chưa có đơn hàng nào</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = orders.map(order => {
+        const statusInfo = OrderHistory.getStatusText(order.orderStatus);
+        return `
+          <div class="order-item-compact" onclick="showOrderDetail('${order.id}')" style="cursor: pointer;">
+            <div class="order-compact-header">
+              <span class="order-id">Mã ĐH: ${order.id}</span>
               <span class="order-status" style="background: ${statusInfo.color}20; color: ${statusInfo.color};">
                 ${statusInfo.text}
               </span>
@@ -802,6 +989,68 @@
       }, 1500);
     }
 
+    // BỔ SUNG: Logic cho Order Detail Modal
+    function showOrderDetail(orderId) {
+      const order = orderHistory.getOrders().find(o => o.id === orderId);
+      const modal = document.getElementById('orderDetailModal');
+      const content = document.getElementById('orderDetailContent');
+
+      if (!order) {
+        showToast("Không tìm thấy đơn hàng", "error");
+        return;
+      }
+      
+      const statusInfo = OrderHistory.getStatusText(order.orderStatus);
+
+      let itemsHtml = order.items.map(item => `
+        <div class="order-detail-item">
+          <span class="item-name">${item.name}</span>
+          <span class="item-quantity">x${item.quantity}</span>
+          <span class="item-price">${formatPrice(item.price * item.quantity)}</span>
+        </div>
+      `).join('');
+
+      let detailHtml = `
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            <span style="font-weight: 600;">Mã đơn hàng:</span> ${order.id}
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+            <span style="font-weight: 600;">Ngày đặt hàng:</span> ${formatDate(order.orderDate)}
+        </p>
+        <p style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            <span style="font-weight: 600;">Trạng thái:</span> 
+            <span class="order-status" style="background: ${statusInfo.color}20; color: ${statusInfo.color}; padding: 0.25rem 0.5rem; border-radius: var(--radius);">
+                ${statusInfo.text}
+            </span>
+        </p>
+
+        <h3 style="margin-top: 1rem; margin-bottom: 0.5rem; color: var(--primary);">Sản phẩm đã mua:</h3>
+        <div class="order-detail-list">
+          ${itemsHtml}
+        </div>
+        
+        <div class="order-summary-row">
+            <span>Tổng cộng:</span>
+            <span>${formatPrice(order.total)}</span>
+        </div>
+      `;
+
+      content.innerHTML = detailHtml;
+      
+      if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+      }
+    }
+
+    function closeOrderDetailModal() {
+      const modal = document.getElementById('orderDetailModal');
+      if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+      }
+    }
+
     function formatPrice(price) {
       return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -836,15 +1085,22 @@
       }
     }
 
-    // Modal close on outside click
+    // CẬP NHẬT: Modal close on outside click (Bao gồm cả modal Top Up và Order Detail)
     document.addEventListener("DOMContentLoaded", () => {
-      const modal = document.getElementById('topUpModal');
-      if (modal) {
-        modal.onclick = (e) => {
-          if (e.target === modal) {
-            closeTopUpModal();
+      const topUpModal = document.getElementById('topUpModal');
+      const orderDetailModal = document.getElementById('orderDetailModal');
+      
+      const closeModalHandler = (e, closeModalFunc) => {
+          if (e.target === e.currentTarget) { // Chỉ đóng khi click trực tiếp vào modal backdrop
+              closeModalFunc();
           }
-        };
+      };
+
+      if (topUpModal) {
+        topUpModal.onclick = (e) => closeModalHandler(e, closeTopUpModal);
+      }
+      if (orderDetailModal) {
+        orderDetailModal.onclick = (e) => closeModalHandler(e, closeOrderDetailModal);
       }
     });
   </script>

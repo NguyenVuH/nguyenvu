@@ -21,33 +21,51 @@ class UserProfile {
     await this.loadUserBalance(userId);
   }
 
-  // Load thông tin người dùng từ localStorage hoặc Firestore
+  // Load thông tin người dùng từ Firestore hoặc localStorage
   async loadUserData(userId) {
     try {
-      // Thử load từ Firestore trước (nếu có)
+      // Thử load từ Firestore trước
       if (typeof db !== 'undefined' && db) {
         try {
           const userDoc = await db.collection("users").doc(userId).get();
           if (userDoc.exists) {
-            this.userInfo = userDoc.data();
+            const data = userDoc.data();
+            this.userInfo = {
+              name: data.name || "",
+              email: data.email || "",
+              phone: data.phone || "",
+              address: data.address || "",
+              city: data.city || "",
+              district: data.district || "",
+              birthday: data.birthday || "",
+              createdAt: data.createdAt || new Date().toISOString(),
+              lastUpdated: data.lastUpdated || new Date().toISOString()
+            };
+            
+            // Sync về localStorage
+            localStorage.setItem(`user_info_${userId}`, JSON.stringify(this.userInfo));
+            
             console.log("Loaded user data from Firestore");
             return;
           }
         } catch (firestoreError) {
-          console.log("Firestore not available, using localStorage");
+          console.log("Firestore not available, trying localStorage");
         }
       }
       
-      // Load từ localStorage
+      // Load từ localStorage nếu Firestore không có
       const stored = localStorage.getItem(`user_info_${userId}`);
       if (stored) {
         this.userInfo = JSON.parse(stored);
         console.log("Loaded user data from localStorage");
+        
+        // Sync lên Firestore
+        await this.syncToFirestore();
       } else {
         // Tạo thông tin mặc định
         const currentUser = typeof auth !== 'undefined' ? auth.currentUser : null;
         this.userInfo = {
-          name: currentUser?.displayName || "Khách hàng",
+          name: currentUser?.displayName || currentUser?.email?.split("@")[0] || "",
           email: currentUser?.email || "",
           phone: "",
           address: "",
@@ -58,7 +76,6 @@ class UserProfile {
           lastUpdated: new Date().toISOString()
         };
         
-        // Lưu thông tin mặc định
         await this.saveUserData();
         console.log("Created default user data");
       }
@@ -68,7 +85,7 @@ class UserProfile {
       // Fallback data
       const currentUser = typeof auth !== 'undefined' ? auth.currentUser : null;
       this.userInfo = {
-        name: currentUser?.displayName || "Khách hàng",
+        name: currentUser?.displayName || currentUser?.email?.split("@")[0] || "",
         email: currentUser?.email || "",
         phone: "",
         address: "",
@@ -82,18 +99,70 @@ class UserProfile {
   // Load số dư tài khoản
   async loadUserBalance(userId) {
     try {
+      // Thử load từ Firestore trước
+      if (typeof db !== 'undefined' && db) {
+        try {
+          const balanceDoc = await db.collection("balances").doc(userId).get();
+          if (balanceDoc.exists) {
+            this.userBalance = balanceDoc.data().balance || 0;
+            
+            // Sync về localStorage
+            localStorage.setItem(`user_balance_${userId}`, this.userBalance.toString());
+            
+            console.log("Loaded balance from Firestore:", this.userBalance);
+            return;
+          }
+        } catch (firestoreError) {
+          console.log("Firestore not available, using localStorage");
+        }
+      }
+      
+      // Load từ localStorage
       const stored = localStorage.getItem(`user_balance_${userId}`);
       this.userBalance = stored ? parseFloat(stored) : 0;
       
-      // Đảm bảo số dư không âm
       if (this.userBalance < 0) {
         this.userBalance = 0;
       }
+      
+      // Sync lên Firestore
+      await this.syncBalanceToFirestore();
       
       console.log("User balance loaded:", this.userBalance);
     } catch (error) {
       console.error("Error loading balance:", error);
       this.userBalance = 0;
+    }
+  }
+
+  // Sync data lên Firestore
+  async syncToFirestore() {
+    if (!this.currentUser || typeof db === 'undefined' || !db) return false;
+    
+    try {
+      await db.collection("users").doc(this.currentUser).set(this.userInfo, { merge: true });
+      console.log("User data synced to Firestore");
+      return true;
+    } catch (error) {
+      console.log("Failed to sync to Firestore:", error.message);
+      return false;
+    }
+  }
+
+  // Sync balance lên Firestore
+  async syncBalanceToFirestore() {
+    if (!this.currentUser || typeof db === 'undefined' || !db) return false;
+    
+    try {
+      await db.collection("balances").doc(this.currentUser).set({
+        balance: this.userBalance,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      console.log("Balance synced to Firestore");
+      return true;
+    } catch (error) {
+      console.log("Failed to sync balance to Firestore:", error.message);
+      return false;
     }
   }
 
@@ -110,15 +179,8 @@ class UserProfile {
       // Lưu vào localStorage
       localStorage.setItem(`user_info_${this.currentUser}`, JSON.stringify(this.userInfo));
       
-      // Đồng bộ lên Firestore nếu có
-      if (typeof db !== 'undefined' && db) {
-        try {
-          await db.collection("users").doc(this.currentUser).set(this.userInfo, { merge: true });
-          console.log("User data synced to Firestore");
-        } catch (firestoreError) {
-          console.log("Firestore sync failed, data saved to localStorage only");
-        }
-      }
+      // Sync lên Firestore
+      await this.syncToFirestore();
       
       return true;
     } catch (error) {
@@ -143,14 +205,11 @@ class UserProfile {
       const oldBalance = this.userBalance;
       
       if (type === "add") {
-        // Thêm tiền vào tài khoản
         this.userBalance += amount;
       } else if (type === "subtract") {
-        // Trừ tiền từ tài khoản
         if (this.userBalance >= amount) {
           this.userBalance -= amount;
         } else {
-          // Số dư không đủ
           if (typeof showToast === 'function') {
             showToast("Số dư không đủ!", "error");
           }
@@ -158,17 +217,18 @@ class UserProfile {
           return false;
         }
       } else if (type === "set") {
-        // Set số dư cụ thể
         this.userBalance = amount;
       }
       
-      // Đảm bảo số dư không âm
       if (this.userBalance < 0) {
         this.userBalance = 0;
       }
       
       // Lưu vào localStorage
       localStorage.setItem(`user_balance_${this.currentUser}`, this.userBalance.toString());
+      
+      // Sync lên Firestore
+      await this.syncBalanceToFirestore();
       
       console.log(`Balance updated: ${oldBalance} -> ${this.userBalance} (${type} ${amount})`);
       return true;
@@ -195,7 +255,6 @@ class UserProfile {
       return false;
     }
     
-    // Merge data mới với data cũ
     this.userInfo = { 
       ...this.userInfo, 
       ...data,
@@ -240,7 +299,7 @@ class UserProfile {
       
       const transaction = {
         id: `TXN${Date.now()}`,
-        type: type, // "add", "subtract", "refund"
+        type: type,
         amount: amount,
         description: description,
         balanceBefore: this.userBalance - (type === "add" ? amount : -amount),
@@ -250,7 +309,6 @@ class UserProfile {
       
       history.unshift(transaction);
       
-      // Chỉ lưu 100 giao dịch gần nhất
       if (history.length > 100) {
         history.length = 100;
       }
@@ -263,7 +321,7 @@ class UserProfile {
     }
   }
 
-  // Reset tất cả dữ liệu user (dùng cho testing)
+  // Reset tất cả dữ liệu user
   async resetUserData() {
     if (!this.currentUser) return false;
     
@@ -283,7 +341,7 @@ class UserProfile {
     }
   }
 
-  // Xuất thông tin user (cho backup)
+  // Xuất thông tin user
   exportUserData() {
     return {
       userInfo: this.userInfo,
@@ -293,7 +351,7 @@ class UserProfile {
     };
   }
 
-  // Nhập thông tin user (từ backup)
+  // Nhập thông tin user
   async importUserData(data) {
     if (!this.currentUser || !data) return false;
     
